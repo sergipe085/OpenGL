@@ -2,13 +2,20 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <cmath>
 
 #include "../headers/GL/glew.h"
 #include "../headers/GLFW/glfw3.h"
 
-const GLint WIDTH = 800, HEIGHT = 800;
+#include "../headers/glm/glm.hpp"
+#include "../headers/glm/gtc/matrix_transform.hpp"
+#include "../headers/glm/gtc/type_ptr.hpp"
 
-GLuint VAO, VBO, shader;
+const GLint WIDTH = 800, HEIGHT = 800;
+const float toRadians = 3.14f / 180.0f;
+
+GLuint VAO, VBO, shader, uniformModel;
+float moveAngle = 0.0f, xPos = 0.0f, yPos = 0.0f;
 
 //Vertex Shader
 static const char *vShader = "				\
@@ -16,11 +23,11 @@ static const char *vShader = "				\
 											\n\
 	layout(location = 0) in vec3 pos;		\n\
 											\n\
-	uniform mat4 model;						\n\
+	uniform mat4 model;										\n\
 											\n\
 	void main()								\n\
 	{										\n\
-		gl_Position = vec4(pos * 0.1, 1.0);			\n\
+		gl_Position = model * vec4(pos * 0.1, 1.0);			\n\
 	}										\n\
 ";
 
@@ -91,6 +98,8 @@ void CompileShader() {
         printf("Error validating shader program: %s", eLog);
         return;
     }
+
+    uniformModel = glGetUniformLocation(shader, "model");
 }
 
 void CreateTriangle() {
@@ -171,12 +180,23 @@ int main() {
         //Get and Handle user input events
         glfwPollEvents();
 
+        moveAngle += 0.001f;
+        xPos = cos(moveAngle);
+        yPos = sin(moveAngle);
+
         //Clear Window
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         //Use the shader program
         __glewUseProgram(shader);
+
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(xPos, yPos, 0.0f));
+            model = glm::rotate   (model, moveAngle * 100 * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
+            model = glm::scale    (model, glm::vec3(xPos, yPos, 0.0f));
+
+            glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 
             //Bind VAO (Vertex Array Objects)
             __glewBindVertexArray(VAO);
