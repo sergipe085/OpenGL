@@ -14,7 +14,7 @@
 const GLint WIDTH = 800, HEIGHT = 800;
 const float toRadians = 3.14f / 180.0f;
 
-GLuint VAO, VBO, IBO, shader, uniformModel, uniformTime;
+GLuint VAO, VBO, IBO, shader, uniformModel, uniformProjection, uniformTime;
 float moveAngle = 0.0f, xPos = 0.0f, yPos = 0.0f, time = 0.0f;
 
 //Vertex Shader
@@ -24,13 +24,14 @@ static const char *vShader = "				                    \
 	layout(location = 0) in vec3 pos;		                    \n\
 											                    \n\
 	uniform mat4 model;										    \n\
+	uniform mat4 projection;								    \n\
 	uniform float time;						                    \n\
 											                    \n\
 	out vec4 vCol;							                    \n\
 											                    \n\
 	void main()								                    \n\
 	{										                    \n\
-		gl_Position = model * vec4(pos, 1.0);			        \n\
+		gl_Position = projection * model * vec4(pos, 1.0);			        \n\
 		vCol = vec4(clamp(pos, 0.0, 1.0), 1.0);			        \n\
 	}										                    \n\
 ";
@@ -106,8 +107,9 @@ void CompileShader() {
         return;
     }
 
-    uniformModel = glGetUniformLocation(shader, "model");
-    uniformTime  = glGetUniformLocation(shader, "time");
+    uniformModel      = glGetUniformLocation(shader, "model");
+    uniformProjection = glGetUniformLocation(shader, "projection");
+    uniformTime       = glGetUniformLocation(shader, "time");
 }
 
 void CreateTriangle() {
@@ -170,15 +172,15 @@ int main() {
         return 1;
     }
 
-    //Enable Depth Teste
-    glEnable(GL_DEPTH_TEST);
-
     //Get buffer size of window
     int bufferWidth, bufferHeight;
     glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);
 
     //Set Context to GLEW use
     glfwMakeContextCurrent(mainWindow);
+
+    //Active vsync
+    glfwSwapInterval(1);
 
     //Alow modern extension features
     glewExperimental = GL_TRUE;
@@ -191,8 +193,13 @@ int main() {
         return 1;
     }
 
+    //Enable Depth Teste
+    glEnable(GL_DEPTH_TEST);
+
     //Setup viewport size
     glViewport(0, 0, bufferWidth, bufferHeight);
+
+    glm::mat4 projection = glm::perspective(45.0f, (GLfloat)bufferWidth / (GLfloat)bufferHeight, 0.1f, 100.0f);
 
     CreateTriangle();
     CompileShader();
@@ -215,11 +222,12 @@ int main() {
         __glewUseProgram(shader);
 
             glm::mat4 model = glm::mat4(1.0f);
-            //model = glm::translate(model, glm::vec3(xPos, yPos, 0.0f));
+            model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
             model = glm::rotate   (model, moveAngle * 100 * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
             model = glm::scale    (model, glm::vec3(0.2f, 0.2f, 1.0f));
 
             glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
             glUniform1fv(uniformTime, 1, &time);
 
             //Bind VAO (Vertex Array Objects)
