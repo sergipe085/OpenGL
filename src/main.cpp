@@ -17,7 +17,7 @@
 const GLint WIDTH = 800, HEIGHT = 800;
 const float toRadians = 3.14f / 180.0f;
 
-GLuint shader, uniformModel, uniformProjection, uniformTime;
+GLuint shaderProgram, uniformModel, uniformProjection, uniformTime;
 float moveAngle = 0.0f, xPos = 0.0f, yPos = 0.0f, time = 0.0f;
 
 std::vector<Mesh*> meshList;
@@ -83,38 +83,38 @@ void AddShader(GLuint shaderProgram, const char* shaderCode, GLenum shaderType) 
 }
 
 void CompileShader() {
-    shader = glCreateProgram();
+    shaderProgram = glCreateProgram();
 
-    if (!shader) {
+    if (!shaderProgram) {
         printf("Error creating shader program!");
         return;
     }
 
-    AddShader(shader, vShader, GL_VERTEX_SHADER);
-    AddShader(shader, fShader, GL_FRAGMENT_SHADER);
+    AddShader(shaderProgram, vShader, GL_VERTEX_SHADER);
+    AddShader(shaderProgram, fShader, GL_FRAGMENT_SHADER);
 
     GLint result = 0;
     GLchar eLog[1024] = { 0 };
 
-    glLinkProgram(shader);
-    glGetProgramiv(shader, GL_LINK_STATUS, &result);
+    glLinkProgram(shaderProgram);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &result);
     if(!result) {
-        glGetProgramInfoLog(shader, sizeof(eLog), NULL, eLog);
+        glGetProgramInfoLog(shaderProgram, sizeof(eLog), NULL, eLog);
         printf("Error linking shader program: %s\n", eLog);
         return;
     }
 
-    glValidateProgram(shader);
-    glGetProgramiv(shader, GL_VALIDATE_STATUS, &result);
+    glValidateProgram(shaderProgram);
+    glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, &result);
     if(!result) {
-        glGetProgramInfoLog(shader, sizeof(eLog), NULL, eLog);
+        glGetProgramInfoLog(shaderProgram, sizeof(eLog), NULL, eLog);
         printf("Error validating shader program: %s", eLog);
         return;
     }
 
-    uniformModel      = glGetUniformLocation(shader, "model");
-    uniformProjection = glGetUniformLocation(shader, "projection");
-    uniformTime       = glGetUniformLocation(shader, "time");
+    uniformModel      = glGetUniformLocation(shaderProgram, "model");
+    uniformProjection = glGetUniformLocation(shaderProgram, "projection");
+    uniformTime       = glGetUniformLocation(shaderProgram, "time");
 }
 
 void CreateTriangle() {
@@ -131,10 +131,34 @@ void CreateTriangle() {
         1.0f,-1.0f, 0.0f, 
         0.0f, 1.0f, 0.0f
     };
+    
+    GLfloat cubeVertices[] = {
+        -0.5f,-0.5f,-0.5f,
+        -0.5f, 0.5f,-0.5f, 
+         0.5f, 0.5f,-0.5f, 
+         0.5f,-0.5f,-0.5f,
+        -0.5f,-0.5f, 0.5f, 
+        -0.5f, 0.5f, 0.5f, 
+         0.5f, 0.5f, 0.5f, 
+         0.5f,-0.5f, 0.5f
+    };
+
+    unsigned int cubeIndices[] = {
+    /*FRONT*/ 0, 1, 3, 1, 3, 2,
+    /*BACK*/  4, 5, 7, 5, 7, 6,
+    /*TOP*/   1, 5, 2, 5, 2, 6,
+    /*BOT*/   0, 4, 3, 4, 3, 7,
+    /*RIGHT*/ 3, 2, 7, 2, 7, 6,
+    /*LEFT*/  4, 5, 0, 5, 0, 1
+    };
 
     Mesh* obj1 = new Mesh();
-    obj1->CreateMesh(vertices, indices, 12, 12);
+    obj1->CreateMesh(cubeVertices, cubeIndices, 24, 36);
     meshList.push_back(obj1);
+
+    Mesh* obj2 = new Mesh();
+    obj2->CreateMesh(vertices, indices, 12, 12);
+    meshList.push_back(obj2);
 }
 
 int main() {
@@ -200,7 +224,7 @@ int main() {
         //Get and Handle user input events
         glfwPollEvents();
 
-        moveAngle += 0.001f;
+        moveAngle += 0.005f;
         xPos = cos(moveAngle);
         yPos = sin(moveAngle);
         time = 1;
@@ -210,18 +234,24 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //Use the shader program
-        __glewUseProgram(shader);
+        __glewUseProgram(shaderProgram);
 
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
-            model = glm::rotate   (model, moveAngle * 100 * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-            model = glm::scale    (model, glm::vec3(0.2f, 0.2f, 1.0f));
-
-            glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
             glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
             glUniform1fv(uniformTime, 1, &time);
 
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
+            model = glm::rotate   (model, moveAngle * 100 * toRadians, glm::vec3(1.0f, 1.0f, 0.0f));
+            model = glm::scale    (model, glm::vec3(0.4f, 0.4f, 0.4f));
+            glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
             meshList[0]->RenderMesh();
+
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(0.0f, 1.0f, -2.5f));
+            model = glm::rotate   (model, moveAngle * 100 * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::scale    (model, glm::vec3(0.2f, 0.2f, 0.2f));
+            glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model)); //bind the model matrix to the uniform variable on the shader
+            meshList[1]->RenderMesh();
 
         __glewUseProgram(0);
 
