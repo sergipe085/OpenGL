@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <cmath>
+#include <vector>
 
 #include "../headers/GL/glew.h"
 #include "../headers/GLFW/glfw3.h"
@@ -11,11 +12,15 @@
 #include "../headers/glm/gtc/matrix_transform.hpp"
 #include "../headers/glm/gtc/type_ptr.hpp"
 
+#include "../headers/Mesh.h"
+
 const GLint WIDTH = 800, HEIGHT = 800;
 const float toRadians = 3.14f / 180.0f;
 
-GLuint VAO, VBO, IBO, shader, uniformModel, uniformProjection, uniformTime;
+GLuint shader, uniformModel, uniformProjection, uniformTime;
 float moveAngle = 0.0f, xPos = 0.0f, yPos = 0.0f, time = 0.0f;
+
+std::vector<Mesh*> meshList;
 
 //Vertex Shader
 static const char *vShader = "				                    \
@@ -31,7 +36,7 @@ static const char *vShader = "				                    \
 											                    \n\
 	void main()								                    \n\
 	{										                    \n\
-		gl_Position = projection * model * vec4(pos, 1.0);			        \n\
+		gl_Position = projection * model * vec4(pos, 1.0);	    \n\
 		vCol = vec4(clamp(pos, 0.0, 1.0), 1.0);			        \n\
 	}										                    \n\
 ";
@@ -127,23 +132,9 @@ void CreateTriangle() {
         0.0f, 1.0f, 0.0f
     };
 
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-        glGenBuffers(1, &IBO);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-        glGenBuffers(1, &VBO);
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-            
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    Mesh* obj1 = new Mesh();
+    obj1->CreateMesh(vertices, indices, 12, 12);
+    meshList.push_back(obj1);
 }
 
 int main() {
@@ -230,20 +221,7 @@ int main() {
             glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
             glUniform1fv(uniformTime, 1, &time);
 
-            //Bind VAO (Vertex Array Objects)
-            __glewBindVertexArray(VAO);
-
-                //Bind IBO or EBO (Index Buffer Object / Element Buffer Object)
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-
-                    //Draw
-                    glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-
-                //Unbind IBO / EBO
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-            //Unbind VAO
-            __glewBindVertexArray(0);
+            meshList[0]->RenderMesh();
 
         __glewUseProgram(0);
 
