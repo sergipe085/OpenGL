@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
+#include <fstream>
 
 #include "../headers/GL/glew.h"
 
@@ -11,8 +13,37 @@ Shader::Shader() {
     uniformProjection = 0;
 }
 
-void Shader::CreateFromString(const char *vertexCode, const char *fragmentCode) {
+void Shader::CreateFromString(const char* vertexCode, const char* fragmentCode) {
     CompileShader(vertexCode, fragmentCode);
+}
+
+void Shader::CreateFromFiles(const char* vertexPath, const char* fragmentPath) {
+    std::string vertexString   = ReadFile(vertexPath);
+    std::string fragmentString = ReadFile(fragmentPath);
+    
+    const char* vertexCode     = vertexString.c_str();
+    const char* fragmentCode   = fragmentString.c_str();
+
+    CompileShader(vertexCode, fragmentCode);
+}
+
+std::string Shader::ReadFile(const char* filePath) {
+    std::string  content;
+    std::fstream fileStream(filePath, std::ios::in);
+
+    if (!fileStream.is_open()) {
+        printf("Filed to open %s! File does not exists!", filePath);
+        return "";
+    }
+
+    std::string line = "";
+    while (!fileStream.eof()) {
+        std::getline(fileStream, line);
+        content.append(line + "\n");
+    }
+
+    fileStream.close();
+    return content;
 }
 
 void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
