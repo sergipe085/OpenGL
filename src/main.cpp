@@ -12,6 +12,7 @@
 #include "../headers/glm/gtc/matrix_transform.hpp"
 #include "../headers/glm/gtc/type_ptr.hpp"
 
+#include "../headers/Window.h"
 #include "../headers/Mesh.h"
 #include "../headers/Shader.h"
 
@@ -20,6 +21,7 @@ const float toRadians = 3.14f / 180.0f;
 
 float moveAngle = 0.0f, xPos = 0.0f, yPos = 0.0f;
 
+Window* mainWindow;
 std::vector<Mesh*>  meshList;
 std::vector<Shader> shaders;
 
@@ -80,59 +82,11 @@ void CreateShaders() {
 }
 
 int main() {
-    
-    //Initialize GLFW
-    if (!glfwInit()) {
-        printf("Error initializing GLFW!");
-        glfwTerminate();
-        return 1;
-    }
+   
+    mainWindow = new Window(800, 600);
+    mainWindow->Initialize();
 
-    //Setup GLFW window properties
-    //Setup OpenGL version
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    //Core Profile = No Backwards Compatibility
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    //Allow Forward Compatibility
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
-    //Create Window
-    GLFWwindow* mainWindow = glfwCreateWindow(WIDTH, HEIGHT, "Title", NULL, NULL);
-    if (!mainWindow) {
-        printf("Error creating window!");
-        glfwTerminate();
-        return 1;
-    }
-
-    //Get buffer size of window
-    int bufferWidth, bufferHeight;
-    glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);
-
-    //Set Context to GLEW use
-    glfwMakeContextCurrent(mainWindow);
-
-    //Active vsync
-    glfwSwapInterval(1);
-
-    //Alow modern extension features
-    glewExperimental = GL_TRUE;
-
-    //Initialize GLEW
-    if (glewInit() != GLEW_OK) {
-        printf("Error initializing GLEW");
-        glfwDestroyWindow(mainWindow);
-        glfwTerminate();
-        return 1;
-    }
-
-    //Enable Depth Teste
-    glEnable(GL_DEPTH_TEST);
-
-    //Setup viewport size
-    glViewport(0, 0, bufferWidth, bufferHeight);
-
-    glm::mat4 projection = glm::perspective(45.0f, (GLfloat)bufferWidth / (GLfloat)bufferHeight, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow->GetBufferWidth() / (GLfloat)mainWindow->GetBufferHeight(), 0.1f, 100.0f);
 
     GLuint uniformProjection = 0, uniformModel = 0;
 
@@ -140,7 +94,7 @@ int main() {
     CreateShaders();
 
     //Loop Until Window Close
-    while(!glfwWindowShouldClose(mainWindow)) {
+    while(!mainWindow->GetShouldClose()) {
         //Get and Handle user input events
         glfwPollEvents();
 
@@ -176,6 +130,6 @@ int main() {
         __glewUseProgram(0);
 
         //Swap the 2 window buffers
-        glfwSwapBuffers(mainWindow);
+        mainWindow->SwapBuffers();
     }
 }
