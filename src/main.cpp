@@ -16,10 +16,7 @@
 #include "../headers/Mesh.h"
 #include "../headers/Shader.h"
 
-const GLint WIDTH = 800, HEIGHT = 800;
 const float toRadians = 3.14f / 180.0f;
-
-float moveAngle = 0.0f, xPos = 0.0f, yPos = 0.0f;
 
 Window* mainWindow;
 std::vector<Mesh*>  meshList;
@@ -98,10 +95,6 @@ int main() {
         //Get and Handle user input events
         glfwPollEvents();
 
-        moveAngle += 0.005f;
-        xPos = cos(moveAngle);
-        yPos = sin(moveAngle);
-
         //Clear Window
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -115,14 +108,14 @@ int main() {
             
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
-            model = glm::rotate   (model, moveAngle * 100 * toRadians, glm::vec3(1.0f, 1.0f, 0.0f));
+            model = glm::rotate   (model, 0.0f, glm::vec3(1.0f, 1.0f, 0.0f));
             model = glm::scale    (model, glm::vec3(0.4f, 0.4f, 0.4f));
             glUniformMatrix4fv    (uniformModel, 1, GL_FALSE, glm::value_ptr(model));
             meshList[0]->RenderMesh();
 
             model = glm::mat4     (1.0f);
             model = glm::translate(model, glm::vec3(0.0f, 1.0f, -2.5f));
-            model = glm::rotate   (model, moveAngle * 100 * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::rotate   (model, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
             model = glm::scale    (model, glm::vec3(0.2f, 0.2f, 0.2f));
             glUniformMatrix4fv    (uniformModel, 1, GL_FALSE, glm::value_ptr(model)); //bind the model matrix to the uniform variable on the shader
             meshList[1]->RenderMesh();
