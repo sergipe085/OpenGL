@@ -15,12 +15,14 @@
 #include "../headers/Window.h"
 #include "../headers/Mesh.h"
 #include "../headers/Shader.h"
+#include "../headers/Camera.h"
 
 const float toRadians = 3.14f / 180.0f;
 
 Window* mainWindow;
 std::vector<Mesh*>  meshList;
 std::vector<Shader> shaders;
+Camera camera;
 
 //Vertex Shader
 static const char* vShader = "shaders/vert.shader";
@@ -85,7 +87,9 @@ int main() {
 
     glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow->GetBufferWidth() / (GLfloat)mainWindow->GetBufferHeight(), 0.1f, 100.0f);
 
-    GLuint uniformProjection = 0, uniformModel = 0;
+    camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 0.1f, 1.0f);
+
+    GLuint uniformProjection = 0, uniformModel = 0, uniformView;
 
     CreateObjects();
     CreateShaders();
@@ -95,6 +99,8 @@ int main() {
         //Get and Handle user input events
         glfwPollEvents();
 
+        camera.keyControl(mainWindow->GetKeys());
+
         //Clear Window
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -103,22 +109,24 @@ int main() {
         shaders[0].UseShader();
         uniformProjection = shaders[0].GetProjectionLocation();
         uniformModel      = shaders[0].GetModelLocation();
+        uniformView       = shaders[0].GetViewLocation();
 
-            glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
-            
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
-            model = glm::rotate   (model, 0.0f, glm::vec3(1.0f, 1.0f, 0.0f));
-            model = glm::scale    (model, glm::vec3(0.4f, 0.4f, 0.4f));
-            glUniformMatrix4fv    (uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-            meshList[0]->RenderMesh();
+        glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
 
-            model = glm::mat4     (1.0f);
-            model = glm::translate(model, glm::vec3(0.0f, 1.0f, -2.5f));
-            model = glm::rotate   (model, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-            model = glm::scale    (model, glm::vec3(0.2f, 0.2f, 0.2f));
-            glUniformMatrix4fv    (uniformModel, 1, GL_FALSE, glm::value_ptr(model)); //bind the model matrix to the uniform variable on the shader
-            meshList[1]->RenderMesh();
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
+        model = glm::rotate(model, 0.0f, glm::vec3(1.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.4f));
+        glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+        meshList[0]->RenderMesh();
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 1.0f, -2.5f));
+        model = glm::rotate(model, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
+        glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model)); //bind the model matrix to the uniform variable on the shader
+        meshList[1]->RenderMesh();
 
         __glewUseProgram(0);
 
